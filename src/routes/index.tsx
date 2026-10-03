@@ -1,17 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import App from "@/features/ticketgen/App";
+import App from "@/features/studio/StudioApp";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "TicketGen DZ — Éditeur de maquettes de tickets de caisse" },
+      { title: "TicketGen DZ Studio — Maquettes de tickets en 3 étapes" },
       {
         name: "description",
         content:
           "Éditeur simple de maquettes visuelles de tickets de caisse à des fins de démonstration et UI.",
       },
-      { property: "og:title", content: "TicketGen DZ" },
+      { property: "og:title", content: "TicketGen DZ Studio" },
       {
         property: "og:description",
         content:
