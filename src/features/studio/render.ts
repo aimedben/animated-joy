@@ -105,7 +105,7 @@ export function drawProject(canvas: HTMLCanvasElement, p: Project, bg: HTMLImage
 
   const cQty = x0 + pad + inner * 0.68;
   const cTot = x0 + w - pad;
-  const nameMax = inner * 0.62;
+  const nameMax = inner * 0.59;
   ctx.font = `700 ${fs * 0.85}px "JetBrains Mono", monospace`;
   ctx.textAlign = "left"; ctx.fillText("ARTICLE", x0 + pad, y);
   ctx.textAlign = "right"; ctx.fillText("QTÉ", cQty, y); ctx.fillText("TOTAL", cTot, y);
@@ -116,7 +116,7 @@ export function drawProject(canvas: HTMLCanvasElement, p: Project, bg: HTMLImage
     ctx.textAlign = "left"; ctx.fillText(ellipsize(ctx, pr.name, nameMax), x0 + pad, y);
     ctx.textAlign = "right";
     ctx.fillText(`×${pr.quantity}`, cQty, y);
-    ctx.fillText(ellipsize(ctx, fmt(lineTotal(pr)), inner * 0.28), cTot, y);
+    ctx.fillText(fmt(lineTotal(pr)), cTot, y, inner * 0.29);
     y += lh;
   }
 
@@ -125,7 +125,7 @@ export function drawProject(canvas: HTMLCanvasElement, p: Project, bg: HTMLImage
   dash(); y += lh * 0.8;
   ctx.font = `700 ${fs * 1.2}px "JetBrains Mono", monospace`;
   ctx.textAlign = "left"; ctx.fillText("TOTAL", x0 + pad, y);
-  ctx.textAlign = "right"; ctx.fillText(`${fmt(grandTotal(p.products))} DA`, cTot, y);
+  ctx.textAlign = "right"; ctx.fillText(`${fmt(grandTotal(p.products))} DA`, cTot, y, inner * 0.75);
   y += lh * 1.3;
   line("Maquette fictive", "center", false, fs * 0.8);
 }

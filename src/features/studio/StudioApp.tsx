@@ -99,6 +99,7 @@ function Preview({ project, onDrag }: { project: Project; onDrag?: (x: number, y
     const observer = new ResizeObserver(render);
     observer.observe(canvas);
     render();
+    document.fonts.ready.then(render);
     return () => observer.disconnect();
   }, [project, img]);
   const drag = useRef<{ dx: number; dy: number } | null>(null);
@@ -129,6 +130,7 @@ function FullscreenCanvas({ project }: { project: Project }) {
     if (!ref.current) return;
     const s = Math.min(3, Math.max(1, Math.min(window.innerWidth / project.photoWidth, window.innerHeight / project.photoHeight) * window.devicePixelRatio));
     drawProject(ref.current, project, img, s);
+    document.fonts.ready.then(() => { if (ref.current) drawProject(ref.current, project, img, s); });
   }, [project, img]);
   return (
     <div className="flex h-full w-full items-center justify-center">
