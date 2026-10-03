@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Dices, Download, FolderOpen, ImagePlus, Move, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Dices, Download, FolderOpen, ImagePlus, Maximize2, Move, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import defaultBg from "@/features/ticketgen/assets/images/table_wood_desk_1791047001699.jpg";
 import { type Product, type Project, clampTicket, drawProject, presetTicket } from "./render";
 
@@ -107,6 +107,21 @@ function Preview({ project, onDrag }: { project: Project; onDrag?: (x: number, y
   );
 }
 
+function FullscreenCanvas({ project }: { project: Project }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const img = useImage(project.backgroundImage || defaultBg);
+  useEffect(() => {
+    if (!ref.current) return;
+    const s = Math.min(window.innerWidth / project.photoWidth, window.innerHeight / project.photoHeight);
+    drawProject(ref.current, project, img, s);
+  }, [project, img]);
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <canvas ref={ref} className="block max-h-full max-w-full" />
+    </div>
+  );
+}
+
 /* ---------- App ---------- */
 export default function StudioApp() {
   const [screen, setScreen] = useState<Screen>("home");
@@ -137,6 +152,7 @@ export default function StudioApp() {
   };
   const formatKey = Object.entries(FORMATS).find(([, [w, h]]) => w === p.photoWidth && h === p.photoHeight)?.[0] ?? "custom";
   const [customFormat, setCustomFormat] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
 
   const persist = (proj: Project) => {
     const c = document.createElement("canvas");
@@ -176,7 +192,6 @@ export default function StudioApp() {
           <Big variant="soft" onClick={() => setScreen("studio")}><FolderOpen className="h-5 w-5" /> STUDIO</Big>
           <Big onClick={startNew}><Plus className="h-5 w-5" /> NOUVEAU PROJET</Big>
         </div>
-        <p className="mt-10 text-xs text-muted-foreground">Toutes les maquettes portent la mention « SPÉCIMEN — NON VALABLE ».</p>
       </div>
     </main>
   );
@@ -374,7 +389,13 @@ export default function StudioApp() {
     <main className={container}>
       <h2 className="mb-4 text-2xl font-extrabold">Votre maquette</h2>
       <Preview project={p} />
+      {fullscreen && (
+        <div className="fixed inset-0 z-50 bg-black" onClick={() => setFullscreen(false)}>
+          <FullscreenCanvas project={p} />
+        </div>
+      )}
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <Big onClick={() => setFullscreen(true)}><Maximize2 className="h-5 w-5" /> Voir plein écran</Big>
         <Big onClick={exportImg}><Download className="h-5 w-5" /> Exporter la maquette</Big>
         <Big variant="soft" onClick={() => setScreen("adjust")}><Move className="h-5 w-5" /> Ajuster</Big>
         <Big variant="soft" onClick={() => setScreen("s1")}><Pencil className="h-5 w-5" /> Modifier</Big>

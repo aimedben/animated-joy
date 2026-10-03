@@ -19,8 +19,6 @@ export type Project = {
   thumbnail?: string;
 };
 
-export const WATERMARK = "SPÉCIMEN — NON VALABLE";
-
 export const lineTotal = (p: Product) => p.quantity * (p.unitPrice ?? 0);
 export const grandTotal = (ps: Product[]) => ps.reduce((s, p) => s + lineTotal(p), 0);
 const fmt = (n: number) => n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\u202f|\u00a0/g, " ");
@@ -101,18 +99,16 @@ export function drawProject(canvas: HTMLCanvasElement, p: Project, bg: HTMLImage
   };
 
   line("TICKET DÉMO", "center", true, fs * 1.25); y += lh * 1.2;
-  line(WATERMARK, "center", true, fs * 0.8); y += lh;
   line(`N° ${p.ticketNumber}`, "left"); y += lh;
   line(`${p.date}  ${p.time}`, "left"); y += lh * 0.7;
   dash(); y += lh * 0.6;
 
-  const cQty = x0 + pad + inner * 0.58;
-  const cPu = x0 + pad + inner * 0.78;
+  const cQty = x0 + pad + inner * 0.68;
   const cTot = x0 + w - pad;
-  const nameMax = inner * 0.5;
+  const nameMax = inner * 0.62;
   ctx.font = `700 ${fs * 0.85}px "JetBrains Mono", monospace`;
   ctx.textAlign = "left"; ctx.fillText("ARTICLE", x0 + pad, y);
-  ctx.textAlign = "right"; ctx.fillText("QTÉ", cQty, y); ctx.fillText("P.U", cPu, y); ctx.fillText("TOTAL", cTot, y);
+  ctx.textAlign = "right"; ctx.fillText("QTÉ", cQty, y); ctx.fillText("TOTAL", cTot, y);
   y += lh;
   const pf = fs * 0.9;
   for (const pr of p.products) {
@@ -120,8 +116,7 @@ export function drawProject(canvas: HTMLCanvasElement, p: Project, bg: HTMLImage
     ctx.textAlign = "left"; ctx.fillText(ellipsize(ctx, pr.name, nameMax), x0 + pad, y);
     ctx.textAlign = "right";
     ctx.fillText(`×${pr.quantity}`, cQty, y);
-    ctx.fillText(String(pr.unitPrice ?? 0), cPu, y);
-    ctx.fillText(ellipsize(ctx, fmt(lineTotal(pr)), inner * 0.2), cTot, y);
+    ctx.fillText(ellipsize(ctx, fmt(lineTotal(pr)), inner * 0.28), cTot, y);
     y += lh;
   }
 
@@ -133,23 +128,4 @@ export function drawProject(canvas: HTMLCanvasElement, p: Project, bg: HTMLImage
   ctx.textAlign = "right"; ctx.fillText(`${fmt(grandTotal(p.products))} DA`, cTot, y);
   y += lh * 1.3;
   line("Maquette fictive", "center", false, fs * 0.8);
-
-  // Diagonal watermark on ticket
-  ctx.save();
-  ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip();
-  ctx.translate(cx, cy); ctx.rotate(-Math.atan2(h, w));
-  ctx.fillStyle = "rgba(220,30,30,0.28)";
-  ctx.font = `800 ${w * 0.085}px Inter, sans-serif`;
-  ctx.textAlign = "center";
-  ctx.fillText(WATERMARK, 0, 0);
-  ctx.restore();
-
-  // Banner on photo
-  const bh = Math.max(24, H * 0.045);
-  ctx.fillStyle = "rgba(200,20,20,0.85)";
-  ctx.fillRect(0, H - bh, W, bh);
-  ctx.fillStyle = "#fff";
-  ctx.font = `800 ${bh * 0.55}px Inter, sans-serif`;
-  ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.fillText(WATERMARK, W / 2, H - bh / 2);
 }
