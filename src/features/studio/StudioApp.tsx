@@ -107,6 +107,21 @@ function Preview({ project, onDrag }: { project: Project; onDrag?: (x: number, y
   );
 }
 
+function FullscreenCanvas({ project }: { project: Project }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const img = useImage(project.backgroundImage || defaultBg);
+  useEffect(() => {
+    if (!ref.current) return;
+    const s = Math.min(window.innerWidth / project.photoWidth, window.innerHeight / project.photoHeight);
+    drawProject(ref.current, project, img, s);
+  }, [project, img]);
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <canvas ref={ref} className="block max-h-full max-w-full" />
+    </div>
+  );
+}
+
 /* ---------- App ---------- */
 export default function StudioApp() {
   const [screen, setScreen] = useState<Screen>("home");
