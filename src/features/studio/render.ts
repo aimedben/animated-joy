@@ -25,9 +25,9 @@ const fmt = (n: number) => n.toLocaleString("fr-FR", { minimumFractionDigits: 2,
 
 /** Auto ticket size from preset + product count, bounded inside photo. */
 export function presetTicket(size: "S" | "M" | "L", pw: number, ph: number, n: number) {
-  const f = size === "S" ? 0.24 : size === "M" ? 0.32 : 0.42;
-  let w = Math.round(Math.min(pw * f, ph * 0.9 * 0.75));
-  let h = Math.round(w * (0.75 + Math.max(n, 3) * 0.075));
+  const f = size === "S" ? 0.32 : size === "M" ? 0.46 : 0.56;
+  let w = Math.round(Math.min(pw * f, ph * 0.94));
+  let h = Math.round(w * (1.08 + Math.max(n - 3, 0) * 0.035));
   const maxH = ph * 0.94;
   if (h > maxH) { w = Math.round(w * (maxH / h)); h = Math.round(maxH); }
   return { w, h };
@@ -80,9 +80,9 @@ export function drawProject(canvas: HTMLCanvasElement, p: Project, bg: HTMLImage
   // Layout recomputed from available space (not a plain scale)
   const n = p.products.length;
   const pad = w * 0.06;
-  const rows = 7 + n + 4; // header, column labels, products, total, footer
-  const lh = Math.min(h / (rows + 1), w / 14);
-  const fs = lh * 0.72;
+  const rows = n + 8; // headers, products, total and footer
+  const lh = Math.min(h / rows, w / 10);
+  const fs = lh * 0.78;
   const inner = w - pad * 2;
   ctx.fillStyle = "#222";
   ctx.textBaseline = "middle";
@@ -105,7 +105,7 @@ export function drawProject(canvas: HTMLCanvasElement, p: Project, bg: HTMLImage
 
   const cQty = x0 + pad + inner * 0.68;
   const cTot = x0 + w - pad;
-  const nameMax = inner * 0.62;
+  const nameMax = inner * 0.59;
   ctx.font = `700 ${fs * 0.85}px "JetBrains Mono", monospace`;
   ctx.textAlign = "left"; ctx.fillText("ARTICLE", x0 + pad, y);
   ctx.textAlign = "right"; ctx.fillText("QTÉ", cQty, y); ctx.fillText("TOTAL", cTot, y);
@@ -116,7 +116,7 @@ export function drawProject(canvas: HTMLCanvasElement, p: Project, bg: HTMLImage
     ctx.textAlign = "left"; ctx.fillText(ellipsize(ctx, pr.name, nameMax), x0 + pad, y);
     ctx.textAlign = "right";
     ctx.fillText(`×${pr.quantity}`, cQty, y);
-    ctx.fillText(ellipsize(ctx, fmt(lineTotal(pr)), inner * 0.28), cTot, y);
+    ctx.fillText(fmt(lineTotal(pr)), cTot, y, inner * 0.29);
     y += lh;
   }
 
@@ -125,7 +125,7 @@ export function drawProject(canvas: HTMLCanvasElement, p: Project, bg: HTMLImage
   dash(); y += lh * 0.8;
   ctx.font = `700 ${fs * 1.2}px "JetBrains Mono", monospace`;
   ctx.textAlign = "left"; ctx.fillText("TOTAL", x0 + pad, y);
-  ctx.textAlign = "right"; ctx.fillText(`${fmt(grandTotal(p.products))} DA`, cTot, y);
+  ctx.textAlign = "right"; ctx.fillText(`${fmt(grandTotal(p.products))} DA`, cTot, y, inner * 0.75);
   y += lh * 1.3;
   line("Maquette fictive", "center", false, fs * 0.8);
 }

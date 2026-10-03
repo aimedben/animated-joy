@@ -17,9 +17,10 @@ const randTime = () => `${pad2(rnd(8, 21))}:${pad2(rnd(0, 59))}`;
 const FORMATS: Record<string, [number, number]> = { "16:9": [1600, 900], "4:3": [1600, 1200], "1:1": [1400, 1400], "9:16": [900, 1600] };
 
 function newProject(): Project {
+  const ticket = presetTicket("M", 1600, 900, 3);
   return {
     id: crypto.randomUUID(), name: "", createdAt: Date.now(), backgroundImage: null,
-    photoWidth: 1600, photoHeight: 900, ticketSize: "M", ticketWidth: 0, ticketHeight: 0,
+    photoWidth: 1600, photoHeight: 900, ticketSize: "M", ticketWidth: ticket.w, ticketHeight: ticket.h,
     ticketPosition: { x: 0.5, y: 0.5 }, zoom: 1, ticketNumber: randNumber(), date: today(), time: now(), products: [],
   };
 }
@@ -37,11 +38,11 @@ function readImage(file: File): Promise<string> {
     r.onload = () => {
       const i = new Image();
       i.onload = () => {
-        const s = Math.min(1, 1800 / Math.max(i.width, i.height));
+        const s = Math.min(1, 3000 / Math.max(i.width, i.height));
         const c = document.createElement("canvas");
         c.width = i.width * s; c.height = i.height * s;
         c.getContext("2d")!.drawImage(i, 0, 0, c.width, c.height);
-        res(c.toDataURL("image/jpeg", 0.85));
+        res(c.toDataURL("image/jpeg", 0.94));
       };
       i.src = r.result as string;
     };
@@ -86,7 +87,21 @@ function StepHeader({ step, title, sub, onBack }: { step: number; title: string;
 function Preview({ project, onDrag }: { project: Project; onDrag?: (x: number, y: number) => void }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const img = useImage(project.backgroundImage || defaultBg);
-  useEffect(() => { if (ref.current) drawProject(ref.current, project, img, 0.6); }, [project, img]);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const render = () => {
+      const width = canvas.getBoundingClientRect().width;
+      if (!width) return;
+      const scale = Math.min(3, Math.max(1, width * window.devicePixelRatio / project.photoWidth));
+      drawProject(canvas, project, img, scale);
+    };
+    const observer = new ResizeObserver(render);
+    observer.observe(canvas);
+    render();
+    document.fonts.ready.then(render);
+    return () => observer.disconnect();
+  }, [project, img]);
   const drag = useRef<{ dx: number; dy: number } | null>(null);
   const toFrac = (e: React.PointerEvent) => {
     const r = ref.current!.getBoundingClientRect();
@@ -94,7 +109,8 @@ function Preview({ project, onDrag }: { project: Project; onDrag?: (x: number, y
   };
   return (
     <canvas ref={ref}
-      className={`block h-auto max-h-[65vh] w-full rounded-xl object-contain shadow-md ${onDrag ? "touch-none cursor-grab" : ""}`}
+      className={`block aspect-[var(--photo-ratio)] h-auto max-h-[65vh] w-full rounded-md object-contain shadow-md ${onDrag ? "touch-none cursor-grab" : ""}`}
+      style={{ "--photo-ratio": `${project.photoWidth} / ${project.photoHeight}` } as React.CSSProperties}
       onPointerDown={(e) => {
         if (!onDrag) return;
         const f = toFrac(e); const c = clampTicket(project);
@@ -112,12 +128,13 @@ function FullscreenCanvas({ project }: { project: Project }) {
   const img = useImage(project.backgroundImage || defaultBg);
   useEffect(() => {
     if (!ref.current) return;
-    const s = Math.min(window.innerWidth / project.photoWidth, window.innerHeight / project.photoHeight);
+    const s = Math.min(3, Math.max(1, Math.min(window.innerWidth / project.photoWidth, window.innerHeight / project.photoHeight) * window.devicePixelRatio));
     drawProject(ref.current, project, img, s);
+    document.fonts.ready.then(() => { if (ref.current) drawProject(ref.current, project, img, s); });
   }, [project, img]);
   return (
     <div className="flex h-full w-full items-center justify-center">
-      <canvas ref={ref} className="block max-h-full max-w-full" />
+      <canvas ref={ref} className="block max-h-full max-w-full object-contain" />
     </div>
   );
 }
@@ -174,7 +191,7 @@ export default function StudioApp() {
 
   const exportImg = () => {
     const c = document.createElement("canvas");
-    drawProject(c, p, bgImg, 1);
+    drawProject(c, p, bgImg, 2);
     const a = document.createElement("a");
     a.download = `maquette-${p.ticketNumber}.png`; a.href = c.toDataURL("image/png"); a.click();
   };
