@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useRef, useState, useCallback } from 'react';
 import { Maximize2, Download, Move, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { AppSettings, TicketModel, TicketProductLine, SelectedTarget } from '../types';

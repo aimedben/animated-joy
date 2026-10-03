@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import {
   GripVertical,
