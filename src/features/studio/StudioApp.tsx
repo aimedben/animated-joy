@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Dices, Download, FolderOpen, ImagePlus, Maximize2, Move, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Dices, Download, FolderOpen, ImagePlus, Maximize2, Move, Pencil, Plus, Shuffle, Sparkles, Trash2, Users, LogOut } from "lucide-react";
 import defaultBg from "@/features/ticketgen/assets/images/table_wood_desk_1791047001699.jpg";
 import { type Product, type Project, clampTicket, drawProject, presetTicket } from "./render";
 
@@ -68,13 +68,26 @@ const Card = ({ children, title }: { children: React.ReactNode; title?: string }
 );
 const inputCls = "w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:ring-2 focus:ring-ring";
 
-function StepHeader({ step, title, sub, onBack }: { step: number; title: string; sub?: string; onBack: () => void }) {
+const Row = ({ label, value, onChange, children }: { label: string; value: string; onChange: (v: string) => void; children: React.ReactNode }) => (
+  <Card title={label}>
+    <input className={inputCls} value={value} onChange={(e) => onChange(e.target.value)} />
+    <div className="mt-2 flex gap-2">{children}</div>
+  </Card>
+);
+const Slider = ({ label, min, max, step = 1, value, onChange }: { label: string; min: number; max: number; step?: number; value: number; onChange: (v: number) => void }) => (
+  <label className="block text-sm font-medium">
+    <span className="flex justify-between"><span>{label}</span><span className="text-muted-foreground">{Math.round(value * 100) / 100}</span></span>
+    <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="mt-1 w-full accent-[var(--primary)]" />
+  </label>
+);
+
+function StepHeader({ step, title, sub, onBack, onGo }: { step: number; title: string; sub?: string; onBack: () => void; onGo?: (s: number) => void }) {
   return (
-    <div className="mb-5">
-      <button onClick={onBack} className="mb-4 flex items-center gap-1 text-sm font-medium text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Retour</button>
-      <div className="mb-2 flex items-center gap-3 text-xs font-semibold text-muted-foreground">
+    <header className="mb-5">
+      <button onClick={onBack} className="mb-3 flex items-center gap-1 text-sm font-medium text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Retour</button>
+      <div className="mb-2 flex gap-2 text-xs font-semibold text-muted-foreground">
         {[1, 2, 3].map((s) => (
-          <span key={s} className={`flex items-center gap-1 ${s === step ? "text-primary" : ""}`}>{s === step ? "●" : "○"} Étape {s}</span>
+          <button key={s} type="button" onClick={() => onGo?.(s)} className={`flex items-center gap-1 rounded-lg px-2 py-1 ${s === step ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}>{s === step ? "●" : "○"} Étape {s}</button>
         ))}
       </div>
       <p className="text-xs font-bold text-primary">ÉTAPE {step} / 3</p>
@@ -140,7 +153,7 @@ function FullscreenCanvas({ project }: { project: Project }) {
 }
 
 /* ---------- App ---------- */
-export default function StudioApp() {
+export default function StudioApp({ isAdmin = false, onOpenAdmin, onSignOut }: { isAdmin?: boolean; onOpenAdmin?: () => void; onSignOut?: () => void }) {
   const [screen, setScreen] = useState<Screen>("home");
   const [projects, setProjects] = useState<Project[]>(loadAll);
   const [p, setP] = useState<Project>(newProject);
@@ -150,6 +163,7 @@ export default function StudioApp() {
   const [priceText, setPriceText] = useState("");
   const bgImg = useImage(p.backgroundImage || defaultBg);
   const up = (patch: Partial<Project>) => setP((o) => ({ ...o, ...patch }));
+  const go = (s: number) => setScreen(s === 1 ? "s1" : s === 2 ? "s2" : "s3");
 
   // Products follow the pasted lines, preserving existing qty/price by index
   const syncProducts = (text: string) => {
@@ -158,6 +172,14 @@ export default function StudioApp() {
     setP((o) => ({ ...o, products: names.map((name, i) => ({ name, quantity: o.products[i]?.quantity ?? 0, unitPrice: o.products[i]?.unitPrice ?? null })) }));
   };
   const setProd = (i: number, patch: Partial<Product>) => setP((o) => ({ ...o, products: o.products.map((x, j) => (j === i ? { ...x, ...patch } : x)) }));
+  const shuffle = () => {
+    const a = [...p.products];
+    for (let i = a.length - 1; i > 0; i--) { const j = rnd(0, i); [a[i], a[j]] = [a[j]!, a[i]!]; }
+    setP((o) => ({ ...o, products: a }));
+    setProductsText(a.map((x) => x.name).join("\n"));
+    setPriceText(a.map((x) => x.unitPrice ?? "").join("\n"));
+    setQtyText(a.map((x) => x.quantity).join("\n"));
+  };
   const nums = (t: string) => t.split("\n").map((s) => s.trim()).map((s) => (s === "" ? null : Number(s.replace(",", ".")))).map((n) => (n === null || isNaN(n) ? null : n));
 
   const missingPrices = p.products.some((x) => x.unitPrice === null);
@@ -208,7 +230,9 @@ export default function StudioApp() {
         <div className="space-y-4">
           <Big variant="soft" onClick={() => setScreen("studio")}><FolderOpen className="h-5 w-5" /> STUDIO</Big>
           <Big onClick={startNew}><Plus className="h-5 w-5" /> NOUVEAU PROJET</Big>
+          {isAdmin && <Big variant="soft" onClick={onOpenAdmin}><Users className="h-5 w-5" /> UTILISATEURS</Big>}
         </div>
+        <button onClick={onSignOut} className="mt-8 inline-flex items-center gap-1 text-sm font-medium text-muted-foreground"><LogOut className="h-4 w-4" /> Se déconnecter</button>
       </div>
     </main>
   );
@@ -241,7 +265,7 @@ export default function StudioApp() {
   /* STEP 1 */
   if (screen === "s1") return (
     <main className={container}>
-      <StepHeader step={1} title="Produits" sub="Ajoutez votre liste de produits" onBack={() => setScreen("home")} />
+      <StepHeader step={1} title="Produits" sub="Ajoutez votre liste de produits" onBack={() => setScreen("home")} onGo={go} />
       <div className="space-y-4">
         <Card title="Liste (un produit par ligne)">
           <textarea value={productsText} onChange={(e) => syncProducts(e.target.value)} rows={7} className={inputCls}
@@ -277,6 +301,7 @@ export default function StudioApp() {
 
         {p.products.length > 0 && (
           <Card title="Aperçu">
+            <div className="mb-2"><Chip onClick={shuffle}><span className="flex items-center gap-1"><Shuffle className="h-4 w-4" /> Mélanger l'ordre</span></Chip></div>
             <ul className="divide-y divide-border">
               {p.products.map((x, i) => (
                 <li key={i} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 py-2">
@@ -300,7 +325,7 @@ export default function StudioApp() {
   /* STEP 2 */
   if (screen === "s2") return (
     <main className={container}>
-      <StepHeader step={2} title="Dimensions" sub="Format de la photo et taille du ticket" onBack={() => setScreen("s1")} />
+      <StepHeader step={2} title="Dimensions" sub="Format de la photo et taille du ticket" onBack={() => setScreen("s1")} onGo={go} />
       <div className="space-y-4">
         <Card title="Photo de fond">
           <label className="flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 font-semibold text-primary">
@@ -345,16 +370,13 @@ export default function StudioApp() {
 
   /* STEP 3 */
   if (screen === "s3") {
-    const Row = ({ label, value, onChange, children }: { label: string; value: string; onChange: (v: string) => void; children: React.ReactNode }) => (
-      <Card title={label}>
-        <input className={inputCls} value={value} onChange={(e) => onChange(e.target.value)} />
-        <div className="mt-2 flex gap-2">{children}</div>
-      </Card>
-    );
     return (
       <main className={container}>
-        <StepHeader step={3} title="Informations" onBack={() => setScreen("s2")} />
+        <StepHeader step={3} title="Informations" onBack={() => setScreen("s2")} onGo={go} />
         <div className="space-y-4">
+          <Card title="Nom de la supérette">
+            <input className={inputCls} value={p.storeName ?? ""} placeholder="TICKET DÉMO" onChange={(e) => up({ storeName: e.target.value })} />
+          </Card>
           <Row label="Numéro de maquette" value={p.ticketNumber} onChange={(v) => up({ ticketNumber: v })}>
             <Chip onClick={() => up({ ticketNumber: randNumber() })}><span className="flex items-center gap-1"><Dices className="h-4 w-4" /> Générer</span></Chip>
           </Row>
@@ -374,12 +396,6 @@ export default function StudioApp() {
 
   /* ADJUST */
   if (screen === "adjust") {
-    const Slider = ({ label, min, max, step = 1, value, onChange }: { label: string; min: number; max: number; step?: number; value: number; onChange: (v: number) => void }) => (
-      <label className="block text-sm font-medium">
-        <span className="flex justify-between"><span>{label}</span><span className="text-muted-foreground">{Math.round(value * 100) / 100}</span></span>
-        <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="mt-1 w-full accent-[var(--primary)]" />
-      </label>
-    );
     const c = clampTicket(p);
     return (
       <main className={container}>
@@ -415,7 +431,13 @@ export default function StudioApp() {
         <Big onClick={() => setFullscreen(true)}><Maximize2 className="h-5 w-5" /> Voir plein écran</Big>
         <Big onClick={exportImg}><Download className="h-5 w-5" /> Exporter la maquette</Big>
         <Big variant="soft" onClick={() => setScreen("adjust")}><Move className="h-5 w-5" /> Ajuster</Big>
-        <Big variant="soft" onClick={() => setScreen("s1")}><Pencil className="h-5 w-5" /> Modifier</Big>
+        <Card title="Modifier une étape">
+          <div className="grid grid-cols-3 gap-2">
+            <Chip onClick={() => setScreen("s1")}><span className="flex items-center justify-center gap-1"><Pencil className="h-4 w-4" /> Produits</span></Chip>
+            <Chip onClick={() => setScreen("s2")}>Dimensions</Chip>
+            <Chip onClick={() => setScreen("s3")}>Infos</Chip>
+          </div>
+        </Card>
         <Big variant="soft" onClick={startNew}><Plus className="h-5 w-5" /> Nouveau projet</Big>
         <Big variant="soft" onClick={() => setScreen("studio")}><ArrowLeft className="h-5 w-5" /> Retour aux projets</Big>
       </div>

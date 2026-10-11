@@ -16,6 +16,7 @@ export type Project = {
   date: string;
   time: string;
   products: Product[];
+  storeName?: string;
   thumbnail?: string;
 };
 
@@ -98,7 +99,7 @@ export function drawProject(canvas: HTMLCanvasElement, p: Project, bg: HTMLImage
     ctx.beginPath(); ctx.moveTo(x0 + pad, y); ctx.lineTo(x0 + w - pad, y); ctx.stroke(); ctx.restore();
   };
 
-  line("TICKET DÉMO", "center", true, fs * 1.25); y += lh * 1.2;
+  line((p.storeName || "TICKET DÉMO").toUpperCase(), "center", true, fs * 1.25); y += lh * 1.2;
   line(`N° ${p.ticketNumber}`, "left"); y += lh;
   line(`${p.date}  ${p.time}`, "left"); y += lh * 0.7;
   dash(); y += lh * 0.6;

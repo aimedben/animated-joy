@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import App from "@/features/studio/StudioApp";
+import App from "@/features/studio/AuthGate";
 
 export const Route = createFileRoute("/")({
   head: () => ({
