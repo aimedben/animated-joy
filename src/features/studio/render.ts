@@ -13,7 +13,6 @@ export type Project = {
   ticketPosition: { x: number; y: number }; // centre, fraction of photo
   zoom: number;
   ticketNumber: string;
-  storeName?: string;
   date: string;
   time: string;
   products: Product[];
@@ -99,7 +98,7 @@ export function drawProject(canvas: HTMLCanvasElement, p: Project, bg: HTMLImage
     ctx.beginPath(); ctx.moveTo(x0 + pad, y); ctx.lineTo(x0 + w - pad, y); ctx.stroke(); ctx.restore();
   };
 
-  line(p.storeName?.trim() || "TICKET DÉMO", "center", true, fs * 1.25); y += lh * 1.2;
+  line("TICKET DÉMO", "center", true, fs * 1.25); y += lh * 1.2;
   line(`N° ${p.ticketNumber}`, "left"); y += lh;
   line(`${p.date}  ${p.time}`, "left"); y += lh * 0.7;
   dash(); y += lh * 0.6;
