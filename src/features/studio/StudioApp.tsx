@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Dices, Download, FolderOpen, ImagePlus, Maximize2, Move, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Dices, Download, FolderOpen, ImagePlus, Maximize2, Move, Pencil, Plus, Shuffle, Sparkles, Trash2, Users, LogOut } from "lucide-react";
 import defaultBg from "@/features/ticketgen/assets/images/table_wood_desk_1791047001699.jpg";
 import { type Product, type Project, clampTicket, drawProject, presetTicket } from "./render";
 
