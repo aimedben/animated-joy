@@ -1,0 +1,5 @@
+- [x] Saisie supérette
+- [x] Ordre aléatoire
+- [x] Choix d'étape
+- [ ] Comptes + accès gratuit
+- [ ] Admin utilisateurs (ajout/suppr/edit/stats)
