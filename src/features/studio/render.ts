@@ -25,7 +25,7 @@ const fmt = (n: number) => n.toLocaleString("fr-FR", { minimumFractionDigits: 2,
 
 /** Auto ticket size from preset + product count, bounded inside photo. */
 export function presetTicket(size: "S" | "M" | "L", pw: number, ph: number, n: number) {
-  const f = size === "S" ? 0.32 : size === "M" ? 0.46 : 0.56;
+  const f = size === "S" ? 0.24 : size === "M" ? 0.32 : 0.42;
   let w = Math.round(Math.min(pw * f, ph * 0.94));
   let h = Math.round(w * (1.08 + Math.max(n - 3, 0) * 0.035));
   const maxH = ph * 0.94;
@@ -53,7 +53,8 @@ export function drawProject(canvas: HTMLCanvasElement, p: Project, bg: HTMLImage
   const W = p.photoWidth, H = p.photoHeight;
   canvas.width = Math.round(W * scale);
   canvas.height = Math.round(H * scale);
-  const ctx = canvas.getContext("2d")!;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
 
   // Background (cover + zoom)
@@ -82,7 +83,7 @@ export function drawProject(canvas: HTMLCanvasElement, p: Project, bg: HTMLImage
   const pad = w * 0.06;
   const rows = n + 8; // headers, products, total and footer
   const lh = Math.min(h / rows, w / 10);
-  const fs = lh * 0.78;
+  const fs = lh * 0.66;
   const inner = w - pad * 2;
   ctx.fillStyle = "#222";
   ctx.textBaseline = "middle";
