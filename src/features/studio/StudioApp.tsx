@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Dices, Download, FolderOpen, ImagePlus, Maximize2, Move, Pencil, Plus, Shuffle, Sparkles, Trash2 } from "lucide-react";
 import defaultBg from "@/features/ticketgen/assets/images/table_wood_desk_1791047001699.jpg";
+import { supabase } from "@/integrations/supabase/client";
 import { type Product, type Project, clampTicket, drawProject, presetTicket } from "./render";
 
 type Screen = "home" | "studio" | "s1" | "s2" | "s3" | "result" | "adjust";
@@ -371,7 +372,7 @@ export default function StudioApp() {
             <Chip onClick={() => up({ time: now() })}>Maintenant</Chip>
             <Chip onClick={() => up({ time: randTime() })}><span className="flex items-center gap-1"><Dices className="h-4 w-4" /> Générer</span></Chip>
           </> })}
-          <Big onClick={() => { persist(p); setScreen("result"); }}><Sparkles className="h-5 w-5" /> GÉNÉRER LA MAQUETTE</Big>
+          <Big onClick={() => { persist(p); void supabase.rpc("track_ticket"); setScreen("result"); }}><Sparkles className="h-5 w-5" /> GÉNÉRER LA MAQUETTE</Big>
         </div>
       </main>
     );
