@@ -8,3 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- Access control: app gated by AuthGate (profiles.status + user_roles admin); admin create/delete users via server fns in src/lib/admin.functions.ts using supabaseAdmin after has_role check — auth users can only be created/deleted with admin API.
