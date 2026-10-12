@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Dices, Download, FolderOpen, ImagePlus, Maximize2, Move, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Dices, Download, FolderOpen, ImagePlus, Maximize2, Move, Pencil, Plus, Shuffle, Sparkles, Trash2 } from "lucide-react";
 import defaultBg from "@/features/ticketgen/assets/images/table_wood_desk_1791047001699.jpg";
 import { type Product, type Project, clampTicket, drawProject, presetTicket } from "./render";
 
@@ -68,13 +68,13 @@ const Card = ({ children, title }: { children: React.ReactNode; title?: string }
 );
 const inputCls = "w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:ring-2 focus:ring-ring";
 
-function StepHeader({ step, title, sub, onBack }: { step: number; title: string; sub?: string; onBack: () => void }) {
+function StepHeader({ step, title, sub, onBack, onStep }: { step: number; title: string; sub?: string; onBack: () => void; onStep?: (s: number) => void }) {
   return (
     <div className="mb-5">
       <button onClick={onBack} className="mb-4 flex items-center gap-1 text-sm font-medium text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Retour</button>
       <div className="mb-2 flex items-center gap-3 text-xs font-semibold text-muted-foreground">
         {[1, 2, 3].map((s) => (
-          <span key={s} className={`flex items-center gap-1 ${s === step ? "text-primary" : ""}`}>{s === step ? "●" : "○"} Étape {s}</span>
+          <button key={s} type="button" onClick={() => onStep?.(s)} className={`flex items-center gap-1 rounded-full px-2 py-1 ${s === step ? "bg-primary/10 text-primary" : "hover:text-foreground"}`}>{s === step ? "●" : "○"} Étape {s}</button>
         ))}
       </div>
       <p className="text-xs font-bold text-primary">ÉTAPE {step} / 3</p>
@@ -196,6 +196,9 @@ export default function StudioApp() {
     a.download = `maquette-${p.ticketNumber}.png`; a.href = c.toDataURL("image/png"); a.click();
   };
 
+  const goStep = (n: number) => { if (n > 1 && !p.ticketWidth) applyTicketPreset("M"); setScreen(("s" + n) as Screen); };
+  const [editPick, setEditPick] = useState(false);
+  const shuffle = () => setP((o) => { const a = [...o.products]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j]!, a[i]!]; } setProductsText(a.map((x) => x.name).join("\n")); setPriceText(a.map((x) => x.unitPrice ?? "").join("\n")); setQtyText(a.map((x) => x.quantity || "").join("\n")); return { ...o, products: a }; });
   const container = "mx-auto w-full max-w-[1000px] px-4 pb-10 pt-6 sm:px-6";
 
   /* HOME */
@@ -241,7 +244,7 @@ export default function StudioApp() {
   /* STEP 1 */
   if (screen === "s1") return (
     <main className={container}>
-      <StepHeader step={1} title="Produits" sub="Ajoutez votre liste de produits" onBack={() => setScreen("home")} />
+      <StepHeader onStep={goStep} step={1} title="Produits" sub="Ajoutez votre liste de produits" onBack={() => setScreen("home")} />
       <div className="space-y-4">
         <Card title="Liste (un produit par ligne)">
           <textarea value={productsText} onChange={(e) => syncProducts(e.target.value)} rows={7} className={inputCls}
@@ -277,6 +280,7 @@ export default function StudioApp() {
 
         {p.products.length > 0 && (
           <Card title="Aperçu">
+            <div className="mb-3"><Chip onClick={shuffle}><span className="flex items-center gap-1"><Shuffle className="h-4 w-4" /> Ordre aléatoire</span></Chip></div>
             <ul className="divide-y divide-border">
               {p.products.map((x, i) => (
                 <li key={i} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 py-2">
@@ -300,7 +304,7 @@ export default function StudioApp() {
   /* STEP 2 */
   if (screen === "s2") return (
     <main className={container}>
-      <StepHeader step={2} title="Dimensions" sub="Format de la photo et taille du ticket" onBack={() => setScreen("s1")} />
+      <StepHeader onStep={goStep} step={2} title="Dimensions" sub="Format de la photo et taille du ticket" onBack={() => setScreen("s1")} />
       <div className="space-y-4">
         <Card title="Photo de fond">
           <label className="flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 font-semibold text-primary">
@@ -345,27 +349,28 @@ export default function StudioApp() {
 
   /* STEP 3 */
   if (screen === "s3") {
-    const Row = ({ label, value, onChange, children }: { label: string; value: string; onChange: (v: string) => void; children: React.ReactNode }) => (
+    const Row = ({ label, value, onChange, children }: { label: string; value: string; onChange: (v: string) => void; children?: React.ReactNode }) => (
       <Card title={label}>
         <input className={inputCls} value={value} onChange={(e) => onChange(e.target.value)} />
-        <div className="mt-2 flex gap-2">{children}</div>
+        {children && <div className="mt-2 flex gap-2">{children}</div>}
       </Card>
     );
     return (
       <main className={container}>
-        <StepHeader step={3} title="Informations" onBack={() => setScreen("s2")} />
+        <StepHeader onStep={goStep} step={3} title="Informations" onBack={() => setScreen("s2")} />
         <div className="space-y-4">
-          <Row label="Numéro de maquette" value={p.ticketNumber} onChange={(v) => up({ ticketNumber: v })}>
+          {Row({ label: "Nom de la supérette", value: p.storeName ?? "", onChange: (v) => up({ storeName: v }) })}
+          {Row({ label: "Numéro de maquette", value: p.ticketNumber, onChange: (v) => up({ ticketNumber: v }), children: <>
             <Chip onClick={() => up({ ticketNumber: randNumber() })}><span className="flex items-center gap-1"><Dices className="h-4 w-4" /> Générer</span></Chip>
-          </Row>
-          <Row label="Date" value={p.date} onChange={(v) => up({ date: v })}>
+          </> })}
+          {Row({ label: "Date", value: p.date, onChange: (v) => up({ date: v }), children: <>
             <Chip onClick={() => up({ date: today() })}>Aujourd'hui</Chip>
             <Chip onClick={() => up({ date: randDate() })}><span className="flex items-center gap-1"><Dices className="h-4 w-4" /> Générer</span></Chip>
-          </Row>
-          <Row label="Heure" value={p.time} onChange={(v) => up({ time: v })}>
+          </> })}
+          {Row({ label: "Heure", value: p.time, onChange: (v) => up({ time: v }), children: <>
             <Chip onClick={() => up({ time: now() })}>Maintenant</Chip>
             <Chip onClick={() => up({ time: randTime() })}><span className="flex items-center gap-1"><Dices className="h-4 w-4" /> Générer</span></Chip>
-          </Row>
+          </> })}
           <Big onClick={() => { persist(p); setScreen("result"); }}><Sparkles className="h-5 w-5" /> GÉNÉRER LA MAQUETTE</Big>
         </div>
       </main>
@@ -415,7 +420,10 @@ export default function StudioApp() {
         <Big onClick={() => setFullscreen(true)}><Maximize2 className="h-5 w-5" /> Voir plein écran</Big>
         <Big onClick={exportImg}><Download className="h-5 w-5" /> Exporter la maquette</Big>
         <Big variant="soft" onClick={() => setScreen("adjust")}><Move className="h-5 w-5" /> Ajuster</Big>
-        <Big variant="soft" onClick={() => setScreen("s1")}><Pencil className="h-5 w-5" /> Modifier</Big>
+        <Big variant="soft" onClick={() => setEditPick((v) => !v)}><Pencil className="h-5 w-5" /> Modifier</Big>
+        {editPick && (<div className="grid grid-cols-3 gap-2 sm:col-span-2">
+          <Chip onClick={() => goStep(1)}>1 · Produits</Chip><Chip onClick={() => goStep(2)}>2 · Dimensions</Chip><Chip onClick={() => goStep(3)}>3 · Infos</Chip>
+        </div>)}
         <Big variant="soft" onClick={startNew}><Plus className="h-5 w-5" /> Nouveau projet</Big>
         <Big variant="soft" onClick={() => setScreen("studio")}><ArrowLeft className="h-5 w-5" /> Retour aux projets</Big>
       </div>
