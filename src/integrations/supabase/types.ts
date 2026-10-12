@@ -22,6 +22,7 @@ export type Database = {
           id: string
           last_seen_at: string | null
           status: Database["public"]["Enums"]["access_status"]
+          tickets_count: number
         }
         Insert: {
           created_at?: string
@@ -30,6 +31,7 @@ export type Database = {
           id: string
           last_seen_at?: string | null
           status?: Database["public"]["Enums"]["access_status"]
+          tickets_count?: number
         }
         Update: {
           created_at?: string
@@ -38,6 +40,7 @@ export type Database = {
           id?: string
           last_seen_at?: string | null
           status?: Database["public"]["Enums"]["access_status"]
+          tickets_count?: number
         }
         Relationships: []
       }
@@ -72,6 +75,7 @@ export type Database = {
         Returns: boolean
       }
       touch_last_seen: { Args: never; Returns: undefined }
+      track_ticket: { Args: never; Returns: undefined }
     }
     Enums: {
       access_status: "en_attente" | "paye" | "gratuit"
