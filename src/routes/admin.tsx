@@ -50,7 +50,7 @@ function Admin() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const update = async (id: string, patch: Partial<Row>) => {
+  const update = async (id: string, patch: Partial<Omit<Row, "sub">>) => {
     setRows((r) => r.map((x) => (x.id === id ? { ...x, ...patch } : x)));
     const { error } = await supabase.from("profiles").update(patch).eq("id", id);
     if (error) setErr(error.message);
