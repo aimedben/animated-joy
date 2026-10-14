@@ -21,6 +21,7 @@ export type Database = {
           email: string | null
           id: string
           last_seen_at: string | null
+          phone: string | null
           status: Database["public"]["Enums"]["access_status"]
           tickets_count: number
         }
@@ -30,6 +31,7 @@ export type Database = {
           email?: string | null
           id: string
           last_seen_at?: string | null
+          phone?: string | null
           status?: Database["public"]["Enums"]["access_status"]
           tickets_count?: number
         }
@@ -39,6 +41,7 @@ export type Database = {
           email?: string | null
           id?: string
           last_seen_at?: string | null
+          phone?: string | null
           status?: Database["public"]["Enums"]["access_status"]
           tickets_count?: number
         }
@@ -74,12 +77,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
       touch_last_seen: { Args: never; Returns: undefined }
       track_ticket: { Args: never; Returns: undefined }
     }
     Enums: {
       access_status: "en_attente" | "paye" | "gratuit"
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "sub_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -208,7 +212,7 @@ export const Constants = {
   public: {
     Enums: {
       access_status: ["en_attente", "paye", "gratuit"],
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "sub_admin"],
     },
   },
 } as const
