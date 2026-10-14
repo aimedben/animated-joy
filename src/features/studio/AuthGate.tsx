@@ -4,7 +4,9 @@ import type { Session } from "@supabase/supabase-js";
 import { LogOut, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-type Access = { status: string; isAdmin: boolean } | null;
+type Access = { status: string; isAdmin: boolean; canAdmin: boolean } | null;
+export const OWNER_PHONE = "0783033616";
+const normPhone = (v: string | null | undefined) => (v ?? "").replace(/\D/g, "").replace(/^213/, "0");
 
 const input = "w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:ring-2 focus:ring-ring";
 const btn = "w-full rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground disabled:opacity-50";
@@ -22,9 +24,14 @@ export function useAccess() {
     const uid = session.user.id;
     void supabase.rpc("touch_last_seen");
     Promise.all([
-      supabase.from("profiles").select("status").eq("id", uid).maybeSingle(),
-      supabase.rpc("has_role", { _user_id: uid, _role: "admin" }),
-    ]).then(([p, r]) => setAccess({ status: p.data?.status ?? "en_attente", isAdmin: !!r.data }));
+      supabase.from("profiles").select("status,phone").eq("id", uid).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", uid),
+    ]).then(([p, r]) => {
+      const roles = (r.data ?? []).map((x) => x.role as string);
+      const owner = roles.includes("admin") && normPhone(p.data?.phone) === OWNER_PHONE;
+      const sub = roles.includes("sub_admin");
+      setAccess({ status: p.data?.status ?? "en_attente", isAdmin: roles.includes("admin") || sub, canAdmin: owner || sub });
+    });
   }, [session]);
   return { session, access };
 }
@@ -69,7 +76,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   return (
     <>
       <div className="flex items-center justify-end gap-3 px-4 pt-3 text-sm">
-        {access!.isAdmin && <Link to="/admin" className="flex items-center gap-1 font-semibold text-primary"><Shield className="h-4 w-4" /> Admin</Link>}
+        {access!.canAdmin && <Link to="/admin" className="flex items-center gap-1 font-semibold text-primary"><Shield className="h-4 w-4" /> Admin</Link>}
         <button onClick={() => supabase.auth.signOut()} className="flex items-center gap-1 text-muted-foreground"><LogOut className="h-4 w-4" /> Déconnexion</button>
       </div>
       {allowed ? children : (

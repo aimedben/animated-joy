@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 type Status = "en_attente" | "paye" | "gratuit";
 
 async function assertAdmin(supabase: any, userId: string) {
-  const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+  const { data } = await supabase.rpc("is_staff", { _user_id: userId });
   if (!data) throw new Error("Accès refusé");
 }
 
@@ -34,6 +34,20 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
     if (data.id === context.userId) throw new Error("Vous ne pouvez pas supprimer votre propre compte");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminSetSubAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string; on: boolean }) => d)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const q = supabaseAdmin.from("user_roles");
+    const { error } = data.on
+      ? await q.upsert({ user_id: data.id, role: "sub_admin" }, { onConflict: "user_id,role" })
+      : await q.delete().eq("user_id", data.id).eq("role", "sub_admin");
     if (error) throw new Error(error.message);
     return { ok: true };
   });

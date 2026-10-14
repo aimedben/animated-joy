@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Trash2, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LoginForm, useAccess } from "@/features/studio/AuthGate";
-import { adminCreateUser, adminDeleteUser } from "@/lib/admin.functions";
+import { adminCreateUser, adminDeleteUser, adminSetSubAdmin } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/admin")({
 });
 
 type Status = "en_attente" | "paye" | "gratuit";
-type Row = { id: string; email: string | null; display_name: string | null; status: Status; tickets_count: number; last_seen_at: string | null; created_at: string };
+type Row = { id: string; email: string | null; display_name: string | null; status: Status; phone: string | null; sub?: boolean; tickets_count: number; last_seen_at: string | null; created_at: string };
 const LABEL: Record<Status, string> = { en_attente: "En attente", paye: "Payé", gratuit: "Gratuit" };
 const input = "w-full rounded-xl border border-input bg-background px-3 py-2 text-base";
 
@@ -31,7 +31,7 @@ function AdminPage() {
   const { session, access } = useAccess();
   if (session === undefined || (session && !access)) return null;
   if (!session) return <LoginForm />;
-  if (!access!.isAdmin) return <main className="p-10 text-center">Accès réservé à l'administrateur. <Link to="/" className="text-primary">Retour</Link></main>;
+  if (!access!.canAdmin) return <main className="p-10 text-center">Accès réservé à l'administrateur. <Link to="/" className="text-primary">Retour</Link></main>;
   return <Admin />;
 }
 
@@ -41,9 +41,12 @@ function Admin() {
   const [form, setForm] = useState({ email: "", password: "", display_name: "", status: "gratuit" as Status });
   const create = useServerFn(adminCreateUser);
   const del = useServerFn(adminDeleteUser);
+  const setSub = useServerFn(adminSetSubAdmin);
   const load = useCallback(async () => {
-    const { data, error } = await supabase.from("profiles").select("id,email,display_name,status,tickets_count,last_seen_at,created_at").order("created_at", { ascending: false });
-    if (error) setErr(error.message); else setRows(data as Row[]);
+    const { data, error } = await supabase.from("profiles").select("id,email,display_name,status,phone,tickets_count,last_seen_at,created_at").order("created_at", { ascending: false });
+    const { data: rl } = await supabase.from("user_roles").select("user_id,role");
+    const subs = new Set((rl ?? []).filter((x) => (x.role as string) === "sub_admin").map((x) => x.user_id));
+    if (error) setErr(error.message); else setRows((data as Row[]).map((x) => ({ ...x, sub: subs.has(x.id) })));
   }, []);
   useEffect(() => { void load(); }, [load]);
 
@@ -90,12 +93,17 @@ function Admin() {
 
       <div className="space-y-2">
         {rows.map((r) => (
-          <div key={r.id} className="grid items-center gap-2 rounded-2xl border border-border bg-card p-3 sm:grid-cols-[1fr_1fr_auto_auto_auto]">
+          <div key={r.id} className="grid items-center gap-2 rounded-2xl border border-border bg-card p-3 sm:grid-cols-[1fr_1fr_1fr_auto_auto_auto_auto]">
             <input className={input} defaultValue={r.display_name ?? ""} onBlur={(e) => e.target.value !== (r.display_name ?? "") && update(r.id, { display_name: e.target.value })} />
             <span className="truncate text-sm text-muted-foreground">{r.email}</span>
+            <input className={input} placeholder="Téléphone" defaultValue={r.phone ?? ""} onBlur={(e) => e.target.value !== (r.phone ?? "") && update(r.id, { phone: e.target.value || null })} />
             <select className={input} value={r.status} onChange={(e) => update(r.id, { status: e.target.value as Status })}>
               {Object.entries(LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
+            <label className="flex items-center gap-1 text-xs font-semibold"><input type="checkbox" checked={!!r.sub} onChange={async (e) => {
+              const on = e.target.checked;
+              try { await setSub({ data: { id: r.id, on } }); setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, sub: on } : x))); } catch (x) { setErr((x as Error).message); }
+            }} /> Sous-admin</label>
             <span className="text-xs text-muted-foreground">{r.tickets_count} maquette(s)<br />{r.last_seen_at ? new Date(r.last_seen_at).toLocaleDateString("fr-FR") : "jamais"}</span>
             <button aria-label="Supprimer" className="justify-self-end p-2 text-destructive" onClick={async () => {
               if (!confirm(`Supprimer ${r.email} ?`)) return;
